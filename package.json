@@ -1,0 +1,27 @@
+{
+  "name": "robert-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot for coordinating tasks, expenses, and logistics with Robert",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "migrate": "tsx scripts/migrate.ts",
+    "gcal-auth": "tsx scripts/gcal-auth.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "cron-parser": "^5.0.0",
+    "googleapis": "^144.0.0",
+    "grammy": "^1.35.0",
+    "sql.js": "^1.11.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
