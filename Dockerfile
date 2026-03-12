@@ -15,4 +15,4 @@ RUN npm install tsx
 # Create data directory (will be mounted as a volume)
 RUN mkdir -p /app/data
 
-CMD ["npx", "tsx", "src/index.ts"]
+CMD ["node", "--import", "tsx", "src/index.ts"]
