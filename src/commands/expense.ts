@@ -2,9 +2,10 @@ import type { Bot, Context } from "grammy";
 import type { Command } from "./types.js";
 import type { BotContext } from "../middleware/user-context.js";
 import { extractParams } from "../services/claude.js";
-import { createExpense } from "../db/client.js";
-import { bold, formatKES } from "../utils/telegram.js";
+import { createExpense, deleteExpense } from "../db/client.js";
+import { bold, formatKES, notifyGroup } from "../utils/telegram.js";
 import { nowInTimezone } from "../utils/dates.js";
+import { getBotInstance } from "../bot.js";
 
 interface ExpenseParams {
   amount: number | null;
@@ -18,8 +19,8 @@ interface ExpenseParams {
 export const expense: Command = {
   name: "expense",
   description:
-    "Log an expense. e.g. /expense 500 rice at Naivas. Or just send a photo of the receipt.",
-  examples: ["/expense 500 rice at Naivas", "/expense 1200 uber to Westlands"],
+    "Log or delete an expense. e.g. /expense 500 rice at Naivas. Or just send a photo of the receipt.",
+  examples: ["/expense 500 rice at Naivas", "/expense 1200 uber to Westlands", "/expense delete 3"],
   register(bot: Bot<Context>) {
     bot.command("expense", async (ctx_) => {
       const ctx = ctx_ as BotContext;
@@ -29,9 +30,24 @@ export const expense: Command = {
 
       if (!text.trim()) {
         await ctx.reply(
-          "How to log an expense:\n• /expense 500 rice at Naivas\n• Send a photo of the receipt/M-Pesa\n• Or just type: I spent 500 on rice"
+          "How to log an expense:\n• /expense 500 rice at Naivas\n• Send a photo of the receipt/M-Pesa\n• Or just type: I spent 500 on rice\n• /expense delete [id] — remove an expense"
         );
         return;
+      }
+
+      // Quick shortcut: delete/remove
+      const lower = text.trim().toLowerCase();
+      if (/^(delete|del|remove)\s+\d+/i.test(lower)) {
+        const id = parseInt(text.replace(/^(delete|del|remove)\s+/i, "").trim());
+        if (!isNaN(id)) {
+          const exp = deleteExpense(id);
+          if (!exp) {
+            await ctx.reply(`Expense #${id} not found.`);
+          } else {
+            await ctx.reply(`🗑 Deleted expense #${exp.id}: KES ${exp.amount} — ${exp.description ?? exp.category}`);
+          }
+          return;
+        }
       }
 
       const params = await extractParams<ExpenseParams>(
@@ -74,6 +90,10 @@ export const expense: Command = {
       if (exp.description) parts.push(`Description: ${exp.description}`);
 
       await ctx.reply(parts.join("\n"), { parse_mode: "HTML" });
+
+      if (ctx.isDM) {
+        await notifyGroup(getBotInstance(), senderName, `💰 Expense #${exp.id}: ${formatKES(exp.amount)} — ${exp.description ?? exp.category} (${exp.category})`);
+      }
     });
 
     // Handle NL-routed expense intents
@@ -105,6 +125,11 @@ export const expense: Command = {
       if (exp.description) parts.push(`Description: ${exp.description}`);
 
       await ctx.reply(parts.join("\n"), { parse_mode: "HTML" });
+
+      if (ctx.isDM) {
+        const senderName = ctx.dbUser?.name ?? "Unknown";
+        await notifyGroup(getBotInstance(), senderName, `💰 Expense #${exp.id}: ${formatKES(exp.amount)} — ${exp.description ?? exp.category} (${exp.category})`);
+      }
     });
   },
 };

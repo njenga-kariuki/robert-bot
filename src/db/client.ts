@@ -139,8 +139,8 @@ function queryOne<T>(sql: string, params: unknown[] = []): T | undefined {
 
 function runSql(sql: string, params: unknown[] = []): number {
   getDb().run(sql, params as (string | number | null | Uint8Array)[]);
-  save();
   const result = queryOne<{ id: number }>("SELECT last_insert_rowid() as id");
+  save();
   return result?.id ?? 0;
 }
 
@@ -337,6 +337,16 @@ export function createExpense(expense: {
   return queryOne<DbExpense>("SELECT * FROM expenses WHERE id = ?", [id])!;
 }
 
+export function deleteExpense(expenseId: number): DbExpense | undefined {
+  const expense = queryOne<DbExpense>(
+    "SELECT * FROM expenses WHERE id = ?",
+    [expenseId]
+  );
+  if (!expense) return undefined;
+  runSql("DELETE FROM expenses WHERE id = ?", [expenseId]);
+  return expense;
+}
+
 export function getExpensesByPeriod(
   startDate: string,
   endDate: string
@@ -410,6 +420,26 @@ export function markShoppingItemPurchased(
     "SELECT * FROM shopping_items WHERE id = ?",
     [itemId]
   );
+}
+
+export function deleteShoppingItem(
+  itemId: number
+): DbShoppingItem | undefined {
+  const item = queryOne<DbShoppingItem>(
+    "SELECT * FROM shopping_items WHERE id = ?",
+    [itemId]
+  );
+  if (!item) return undefined;
+  runSql("DELETE FROM shopping_items WHERE id = ?", [itemId]);
+  return item;
+}
+
+export function clearPurchasedItems(): number {
+  const count = queryOne<{ c: number }>(
+    "SELECT COUNT(*) as c FROM shopping_items WHERE purchased = 1"
+  );
+  runSql("DELETE FROM shopping_items WHERE purchased = 1");
+  return count?.c ?? 0;
 }
 
 // ----- Note helpers -----
@@ -499,4 +529,96 @@ export function listActiveReminders(): DbReminder[] {
   return queryAll<DbReminder>(
     "SELECT * FROM reminders WHERE is_active = 1 ORDER BY next_fire_at ASC"
   );
+}
+
+// ----- Chat message helpers -----
+
+export interface DbChatMessage {
+  id: number;
+  chat_id: number;
+  telegram_user_id: number;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
+
+export function storeChatMessage(
+  chatId: number,
+  telegramUserId: number,
+  role: "user" | "assistant",
+  content: string
+): void {
+  runSql(
+    "INSERT INTO chat_messages (chat_id, telegram_user_id, role, content) VALUES (?, ?, ?, ?)",
+    [chatId, telegramUserId, role, content]
+  );
+}
+
+export function getChatHistory(chatId: number, limit = 50): DbChatMessage[] {
+  return queryAll<DbChatMessage>(
+    `SELECT * FROM (
+      SELECT * FROM chat_messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT ?
+    ) sub ORDER BY created_at ASC`,
+    [chatId, limit]
+  );
+}
+
+export function getOperationalContext(): string {
+  const sections: string[] = [];
+
+  // Open tasks
+  const tasks = listTasks();
+  if (tasks.length > 0) {
+    const users = getAllUsers();
+    const userMap = new Map(users.map((u) => [u.id, u.name]));
+    const taskLines = tasks.map((t) => {
+      const assignee = t.assignee_id
+        ? userMap.get(t.assignee_id) ?? "unassigned"
+        : "unassigned";
+      return `  #${t.id} ${t.title} [${t.priority}] → ${assignee} (${t.status})${t.due_date ? ` due ${t.due_date}` : ""}`;
+    });
+    sections.push(`Open tasks:\n${taskLines.join("\n")}`);
+  }
+
+  // Shopping list
+  const items = listShoppingItems();
+  if (items.length > 0) {
+    const itemLines = items.map(
+      (i) => `  #${i.id} ${i.item}${i.quantity ? ` (${i.quantity})` : ""}`
+    );
+    sections.push(`Shopping list:\n${itemLines.join("\n")}`);
+  }
+
+  // Active reminders
+  const reminders = listActiveReminders();
+  if (reminders.length > 0) {
+    const reminderLines = reminders.map(
+      (r) => `  #${r.id} "${r.message}" → fires ${r.next_fire_at}`
+    );
+    sections.push(`Active reminders:\n${reminderLines.join("\n")}`);
+  }
+
+  // Recent expenses (last 7 days)
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const expenses = getExpensesByPeriod(
+    weekAgo.toISOString().split("T")[0],
+    now.toISOString().split("T")[0]
+  );
+  if (expenses.length > 0) {
+    const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const expLines = expenses
+      .slice(0, 10)
+      .map(
+        (e) =>
+          `  ${e.expense_date}: KES ${e.amount} ${e.vendor ?? ""} (${e.category})`
+      );
+    sections.push(
+      `Recent expenses (7 days, KES ${total} total):\n${expLines.join("\n")}${expenses.length > 10 ? `\n  ...and ${expenses.length - 10} more` : ""}`
+    );
+  }
+
+  return sections.length > 0
+    ? sections.join("\n\n")
+    : "No active tasks, shopping items, reminders, or recent expenses.";
 }

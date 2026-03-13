@@ -6,13 +6,15 @@ import {
   addShoppingItem,
   listShoppingItems,
   markShoppingItemPurchased,
+  deleteShoppingItem,
+  clearPurchasedItems,
 } from "../db/client.js";
 import { bold } from "../utils/telegram.js";
 import { formatDate } from "../utils/dates.js";
 import { nowInTimezone } from "../utils/dates.js";
 
 interface ShopParams {
-  action: "add" | "list" | "done";
+  action: "add" | "list" | "done" | "remove" | "clear";
   items: { item: string; quantity: string | null }[];
   need_by: string | null;
   item_id: number | null;
@@ -21,11 +23,13 @@ interface ShopParams {
 export const shop: Command = {
   name: "shop",
   description:
-    "Manage shopping list — add items, view list, mark purchased. e.g. /shop add 2kg rice, cooking oil",
+    "Manage shopping list — add items, view list, mark purchased, remove items. e.g. /shop add 2kg rice, cooking oil",
   examples: [
     "/shop add 2kg rice, cooking oil need by Saturday",
     "/shop",
     "/shop done 3",
+    "/shop remove 3",
+    "/shop clear",
   ],
   register(bot: Bot<Context>) {
     bot.command("shop", async (ctx_) => {
@@ -46,6 +50,17 @@ export const shop: Command = {
         if (!isNaN(id)) return await markPurchased(ctx, id);
       }
 
+      // Quick shortcut: remove/delete
+      if (/^(remove|delete|del)\s+\d+/i.test(lower)) {
+        const id = parseInt(text.replace(/^(remove|delete|del)\s+/i, "").trim());
+        if (!isNaN(id)) return await removeItem(ctx, id);
+      }
+
+      // Quick shortcut: clear purchased
+      if (lower === "clear") {
+        return await clearPurchased(ctx);
+      }
+
       // Quick shortcut: list
       if (lower === "list" || lower === "all") {
         return await showShoppingList(ctx, true);
@@ -56,10 +71,10 @@ export const shop: Command = {
         "shop",
         text,
         `{
-          "action": "add|list|done",
+          "action": "add|list|done|remove|clear",
           "items": [{ "item": "item name", "quantity": "amount/quantity or null" }],
           "need_by": "YYYY-MM-DD or null",
-          "item_id": "number or null (for done action)"
+          "item_id": "number or null (for done/remove action)"
         }`,
         senderName,
         now.toISOString()
@@ -71,6 +86,14 @@ export const shop: Command = {
 
       if (params.action === "done" && params.item_id) {
         return await markPurchased(ctx, params.item_id);
+      }
+
+      if (params.action === "remove" && params.item_id) {
+        return await removeItem(ctx, params.item_id);
+      }
+
+      if (params.action === "clear") {
+        return await clearPurchased(ctx);
       }
 
       // Add items
@@ -158,9 +181,27 @@ async function showShoppingList(
     lines.push(`${check} #${item.id} ${qty}${item.item}${needBy}`);
   }
 
-  lines.push("", "Mark purchased: /shop done [id]");
+  lines.push("", "Mark purchased: /shop done [id] · Remove: /shop remove [id] · Clear purchased: /shop clear");
 
   await ctx.reply(lines.join("\n"), { parse_mode: "HTML" });
+}
+
+async function removeItem(ctx: BotContext, itemId: number): Promise<void> {
+  const item = deleteShoppingItem(itemId);
+  if (!item) {
+    await ctx.reply(`Item #${itemId} not found.`);
+    return;
+  }
+  await ctx.reply(`🗑 Removed: ${item.item}`);
+}
+
+async function clearPurchased(ctx: BotContext): Promise<void> {
+  const count = clearPurchasedItems();
+  if (count === 0) {
+    await ctx.reply("No purchased items to clear.");
+    return;
+  }
+  await ctx.reply(`🗑 Cleared ${count} purchased item${count === 1 ? "" : "s"}.`);
 }
 
 async function markPurchased(ctx: BotContext, itemId: number): Promise<void> {

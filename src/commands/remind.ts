@@ -2,7 +2,7 @@ import type { Bot, Context } from "grammy";
 import type { Command } from "./types.js";
 import type { BotContext } from "../middleware/user-context.js";
 import { extractParams } from "../services/claude.js";
-import { createReminder, getUserByName } from "../db/client.js";
+import { createReminder, getUserByName, listActiveReminders, deactivateReminder } from "../db/client.js";
 import { createCalendarEvent } from "../services/gcal.js";
 import { bold } from "../utils/telegram.js";
 import { formatDate } from "../utils/dates.js";
@@ -17,11 +17,12 @@ interface RemindParams {
 export const remind: Command = {
   name: "remind",
   description:
-    "Set a one-time reminder. e.g. /remind Robert pick up laundry tomorrow 10am",
+    "Set, list, or cancel a one-time reminder. e.g. /remind Robert pick up laundry tomorrow 10am",
   examples: [
     "/remind Robert pick up laundry tomorrow 10am",
     "/remind both expense review Friday 3pm",
-    "/remind Jay call plumber Monday 9am",
+    "/remind list",
+    "/remind cancel 3",
   ],
   register(bot: Bot<Context>) {
     bot.command("remind", async (ctx_) => {
@@ -32,9 +33,21 @@ export const remind: Command = {
 
       if (!text) {
         await ctx.reply(
-          "Set a reminder:\n/remind [who] [message] [when]\n\nExample: /remind Robert pick up laundry tomorrow 10am"
+          "Set a reminder:\n/remind [who] [message] [when]\n\nExample: /remind Robert pick up laundry tomorrow 10am\n\n/remind list — see pending reminders\n/remind cancel [id] — cancel a reminder"
         );
         return;
+      }
+
+      // Quick shortcut: list
+      const lower = text.toLowerCase();
+      if (lower === "list") {
+        return await listReminders(ctx);
+      }
+
+      // Quick shortcut: cancel
+      if (/^cancel\s+\d+/i.test(lower)) {
+        const id = parseInt(text.replace(/^cancel\s+/i, "").trim());
+        if (!isNaN(id)) return await cancelReminder(ctx, id);
       }
 
       const params = await extractParams<RemindParams>(
@@ -140,3 +153,30 @@ export const remind: Command = {
     });
   },
 };
+
+async function listReminders(ctx: BotContext): Promise<void> {
+  const reminders = listActiveReminders().filter((r) => !r.cron_expression);
+  if (reminders.length === 0) {
+    await ctx.reply("No pending one-time reminders.");
+    return;
+  }
+
+  const lines = [`🔔 ${bold("Pending Reminders")}`, ""];
+  for (const r of reminders) {
+    lines.push(`#${r.id} "${r.message}" — ${formatDate(r.next_fire_at, { includeTime: true })}`);
+  }
+  lines.push("", "Cancel: /remind cancel [id]");
+
+  await ctx.reply(lines.join("\n"), { parse_mode: "HTML" });
+}
+
+async function cancelReminder(ctx: BotContext, reminderId: number): Promise<void> {
+  const reminders = listActiveReminders();
+  const reminder = reminders.find((r) => r.id === reminderId);
+  if (!reminder) {
+    await ctx.reply(`Reminder #${reminderId} not found or already inactive.`);
+    return;
+  }
+  deactivateReminder(reminderId);
+  await ctx.reply(`🔕 Cancelled reminder #${reminderId}: "${reminder.message}"`);
+}
