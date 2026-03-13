@@ -9,11 +9,10 @@ This bot makes our work together easier and faster. Think of it as a shared note
 ${bold("Two places to use it:")}
 
 ${bold("Group chat")} = the shared record
-Anything that affects both of you shows up here — tasks, expenses, reminders. This is where you talk to each other.
+Tasks, expenses, and reminders show up in the group — visible to both of you. That's where you talk to each other.
 
 ${bold("DM the bot")} = your personal workspace
-Tap the bot's name → "Send Message" to open your DM.
-You can do ${bold("everything")} from DM — log expenses, add tasks, check lists, ask questions. The bot automatically posts important updates (expenses, tasks) to the group so nobody misses anything. Shopping, notes, and research stay private.
+You can do ${bold("everything")} from DM — log expenses, add tasks, check lists, ask questions. The bot automatically posts important updates (expenses, tasks) to the group so nobody misses anything. Shopping, notes, and research stay private in your DM.
 
 ${bold("One rule:")} Use DM when you're doing your work. Use group when you want to talk to each other.
 
@@ -128,23 +127,18 @@ ${bold("🏖 Practice mode — try everything now")}
 
 Right now the bot is in practice mode — nothing is real yet. Try stuff out:
 
-${bold("Here in the group:")}
+${bold("Try these right here:")}
 • /task buy new mop for the office
 • /expense 300 uber to CBD
 • /shop add detergent, bin liners
+• "What's the best place to buy office furniture in Nairobi?"
 
-${bold("Then open your DM with the bot:")}
-Tap the bot's name above → "Send Message"
-• Type: "What's the best place to buy office furniture in Nairobi?"
-• It'll answer like a personal assistant — only you see it
-
-${bold("Try typing naturally in the group (no / needed):")}
+${bold("Now open the group chat and try:")}
 • "we need more sugar and cooking oil"
 • The bot might ask: "Add sugar and cooking oil to the shopping list?" — just say "yes"
+• Check that expenses and tasks you logged from DM showed up in the group automatically
 
-Take your time, play around. When you're comfortable, come back here and type:
-
-/ready
+Take your time, play around. When you're comfortable, type /ready (from here or the group — either works).
 
 That tells Jay you're good, and he'll switch everything to live.`;
 

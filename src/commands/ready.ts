@@ -1,7 +1,8 @@
 import type { Bot, Context } from "grammy";
 import type { Command } from "./types.js";
 import type { BotContext } from "../middleware/user-context.js";
-import { bold } from "../utils/telegram.js";
+import { bold, notifyGroup } from "../utils/telegram.js";
+import { getBotInstance } from "../bot.js";
 
 export const ready: Command = {
   name: "ready",
@@ -15,6 +16,10 @@ export const ready: Command = {
         `${bold(`${name} is ready to go live!`)} 🚀\n\nJay — when you're good too, send /golive and everything starts counting for real.`,
         { parse_mode: "HTML" }
       );
+
+      if (ctx.isDM) {
+        await notifyGroup(getBotInstance(), name, `${name} is ready to go live! 🚀`);
+      }
     });
   },
 };
