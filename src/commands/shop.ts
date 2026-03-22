@@ -12,6 +12,8 @@ import {
 import { bold } from "../utils/telegram.js";
 import { formatDate } from "../utils/dates.js";
 import { nowInTimezone } from "../utils/dates.js";
+import { getBotInstance } from "../bot.js";
+import { markPracticeStep } from "../services/practice-tracker.js";
 
 interface ShopParams {
   action: "add" | "list" | "done" | "remove" | "clear";
@@ -124,6 +126,7 @@ export const shop: Command = {
       if (params.need_by) msg += `\nNeed by: ${formatDate(params.need_by)}`;
 
       await ctx.reply(msg, { parse_mode: "HTML" });
+      await markPracticeStep(ctx, "shop", getBotInstance());
     });
 
     // Handle NL-routed shopping intents
@@ -156,6 +159,7 @@ export const shop: Command = {
         await ctx.reply(`🛒 Added to shopping list:\n${itemList}`, {
           parse_mode: "HTML",
         });
+        await markPracticeStep(ctx, "shop", getBotInstance());
       }
     });
   },

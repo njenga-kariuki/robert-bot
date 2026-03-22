@@ -1,6 +1,7 @@
 import type { Bot, Context } from "grammy";
 import type { Command } from "./types.js";
 import { lookupQuery } from "../services/claude.js";
+import { markdownToTelegramHtml } from "../utils/telegram.js";
 
 export const lookup: Command = {
   name: "lookup",
@@ -21,8 +22,8 @@ export const lookup: Command = {
 
       await ctx.replyWithChatAction("typing");
 
-      const answer = await lookupQuery(query);
-      await ctx.reply(answer, { parse_mode: "HTML" });
+      const rawAnswer = await lookupQuery(query);
+      await ctx.reply(markdownToTelegramHtml(rawAnswer), { parse_mode: "HTML" });
     });
   },
 };

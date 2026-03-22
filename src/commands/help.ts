@@ -43,6 +43,7 @@ ${bold("Other")}
 /test — run diagnostics (DM)
 
 💡 Or just type naturally — the bot understands.
+💡 If it's not sure, it'll ask to confirm first.
 💡 DM the bot for private notes and research.`;
 
       await ctx.reply(text, { parse_mode: "HTML" });
@@ -53,7 +54,7 @@ ${bold("Other")}
       const name = ctx.dbUser?.name ?? ctx.from?.first_name ?? "there";
 
       const msg = ctx.isDM
-        ? `Hey ${name}! 👋 This is your personal space.\n\nYou can:\n• Ask me anything — research, prices, how-to\n• Save notes with /note\n• Use all the same commands as the group\n\nJust type what you need.`
+        ? `Hey ${name}! 👋 This is your personal space.\n\nYou can:\n• Ask me anything — research, prices, how-to\n• Ask about your tasks, expenses, or shopping list\n• Save notes with /note\n• Use all the same commands as the group\n\nI remember our conversation, so you can follow up naturally. Just type what you need.`
         : `Hey ${name}! 👋 I help you and ${ctx.dbUser?.role === "principal" ? "Robert" : "Jay"} stay on top of tasks, expenses, shopping, and reminders.\n\nType /guide for a walkthrough, or /help for the command list.`;
 
       await ctx.reply(msg, { parse_mode: "HTML" });

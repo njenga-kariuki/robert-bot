@@ -19,16 +19,26 @@ export interface ClassifiedIntent {
 export async function classifyIntent(
   message: string,
   commands: Command[],
-  senderName: string
+  senderName: string,
+  history: Array<{ role: "user" | "assistant"; content: string }> = []
 ): Promise<ClassifiedIntent | null> {
   const commandList = commands
     .map((c) => `- ${c.name}: ${c.description}`)
     .join("\n");
 
+  // Build messages array with history for context
+  const messages: Array<{ role: "user" | "assistant"; content: string }> = [];
+  for (const h of history) {
+    messages.push({ role: h.role, content: h.content });
+  }
+  // Ensure proper alternation — merge consecutive same-role messages
+  const sanitized = sanitizeMessages(messages);
+  sanitized.push({ role: "user" as const, content: message });
+
   const response = await client.messages.create({
     model: config.anthropic.model,
     max_tokens: 500,
-    messages: [{ role: "user", content: message }],
+    messages: sanitized,
     system: `You are a message classifier for a Telegram bot used to manage tasks, expenses, shopping, and reminders between Jay (principal) and Robert (associate) in Nairobi, Kenya.
 
 The sender of this message is: ${senderName}
@@ -37,13 +47,14 @@ Available commands:
 ${commandList}
 - ignore: not a bot command, just casual conversation
 
-Classify the user's message into one of these intents. Extract any relevant parameters.
+Classify the user's LATEST message into one of these intents. Use the conversation history for context (e.g., "yes" after a clarification, or "add that to the list" after discussing an item).
 
 The users may write in English, Sheng, Swahili, or a mix. Common patterns:
 - "nilipay" / "nililipa" / "I paid" / "I spent" = expense
 - "tunahitaji" / "we need" / "buy" = shopping
 - "remind" / "nikumbushe" = remind
 - Amounts in "bob" or "KES" or just numbers in context of spending = expense
+- "yes" / "yeah" / "sawa" after a bot clarification = confirm the action the bot suggested
 
 Respond ONLY with valid JSON (no markdown):
 {
@@ -64,11 +75,7 @@ If the message is casual conversation, social, or unclear, use intent "ignore" w
     response.content[0].type === "text" ? response.content[0].text : "";
 
   try {
-    const result = JSON.parse(text) as ClassifiedIntent;
-    if (result.intent === "ignore" || result.confidence < 0.7) {
-      return null;
-    }
-    return result;
+    return JSON.parse(text) as ClassifiedIntent;
   } catch {
     return null;
   }
@@ -201,7 +208,18 @@ Answer the question concisely and practically. Focus on:
 - Practical tips for getting things done in Nairobi
 
 If you're not sure about specific current details (hours, prices), say so clearly.
-Keep answers short -- this is for a Telegram chat, not an essay.`,
+
+FORMATTING: This response will be rendered in Telegram using HTML parse mode. Use Telegram-compatible HTML:
+- <b>Section Name</b> for section headers (no <h1>/<h2> — Telegram ignores them)
+- <i>emphasis</i> for emphasis
+- • (bullet character) for lists — do NOT use markdown dashes
+- Short paragraphs separated by blank lines for readability
+- For tabular/comparison data, use <pre> monospace blocks with aligned columns (keep under 35 chars wide):
+  <pre>Item        Amt     Status
+  ─────────────────────────
+  Tea         KES 50  paid</pre>
+- Do NOT use markdown syntax: no #, **, __, \`\`\`, or | table pipes
+- Keep answers short and conversational.`,
   });
 
   return response.content[0].type === "text"
@@ -218,12 +236,26 @@ Keep answers short -- this is for a Telegram chat, not an essay.`,
  */
 export async function dmResearchQuery(
   query: string,
-  senderName: string
+  senderName: string,
+  history: Array<{ role: "user" | "assistant"; content: string }> = [],
+  opsContext = ""
 ): Promise<string> {
+  // Build messages array with history
+  const messages: Array<{ role: "user" | "assistant"; content: string }> = [];
+  for (const h of history) {
+    messages.push({ role: h.role, content: h.content });
+  }
+  const sanitized = sanitizeMessages(messages);
+  sanitized.push({ role: "user" as const, content: query });
+
+  const opsSection = opsContext
+    ? `\n\nCurrent operational data (answer from this when asked about tasks, expenses, shopping, reminders):\n${opsContext}`
+    : "";
+
   const response = await client.messages.create({
     model: config.anthropic.model,
     max_tokens: 2000,
-    messages: [{ role: "user", content: query }],
+    messages: sanitized,
     system: `You are a helpful research assistant in a Telegram DM with ${senderName}.
 
 ${senderName} works with Jay on business operations and logistics, primarily in Nairobi, Kenya. They may ask about:
@@ -233,16 +265,89 @@ ${senderName} works with Jay on business operations and logistics, primarily in 
 - General knowledge questions
 - Help with communication (drafting messages, translating)
 - Planning and problem-solving
+- Current tasks, expenses, shopping list, or reminders (use the operational data below)
 
 Be practical, direct, and helpful. Give actionable answers.
 If a question is about Nairobi/Kenya, draw on local context (M-Pesa, matatus, common stores, etc.).
 If you're unsure about current specifics (prices, hours), say so and give your best estimate.
 
-Keep responses clear and well-structured, but conversational — this is a chat, not a report.
-Use short paragraphs. Bullet points when listing options.`,
+FORMATTING: This response will be rendered in Telegram using HTML parse mode. Use Telegram-compatible HTML:
+- <b>Section Name</b> for section headers (no <h1>/<h2> — Telegram ignores them)
+- <i>emphasis</i> for emphasis
+- • (bullet character) for lists — do NOT use markdown dashes
+- Short paragraphs separated by blank lines for readability
+- For tabular/comparison data, use <pre> monospace blocks with aligned columns (keep under 35 chars wide):
+  <pre>Item        Amt     Status
+  ─────────────────────────
+  Tea         KES 50  paid</pre>
+- Do NOT use markdown syntax: no #, **, __, \`\`\`, or | table pipes
+- Keep responses concise — this is chat, not a report${opsSection}`,
   });
 
   return response.content[0].type === "text"
     ? response.content[0].text
     : "Sorry, I couldn't help with that. Try rephrasing?";
+}
+
+/**
+ * Generate a short clarification question when confidence is in the 0.4-0.7 band.
+ * Returns a concise, actionable question like "Add rice to the shopping list?"
+ */
+export async function groupClarifyQuery(
+  originalMessage: string,
+  intent: ClassifiedIntent,
+  history: Array<{ role: "user" | "assistant"; content: string }> = []
+): Promise<string> {
+  const historyContext =
+    history.length > 0
+      ? `\nRecent conversation:\n${history.slice(-6).map((h) => `${h.role}: ${h.content}`).join("\n")}`
+      : "";
+
+  const response = await client.messages.create({
+    model: config.anthropic.model,
+    max_tokens: 200,
+    messages: [
+      {
+        role: "user",
+        content: `Original message: "${originalMessage}"
+Classified as: ${intent.intent} (confidence: ${intent.confidence})
+Extracted params: ${JSON.stringify(intent.params)}${historyContext}
+
+Generate a short, friendly clarification question to confirm if the user meant this action. Keep it under 15 words. Examples:
+- "Add rice and cooking oil to the shopping list?"
+- "Create a task to call the supplier?"
+- "Log KES 500 expense at Naivas?"`,
+      },
+    ],
+    system:
+      "You generate short clarification questions for a Telegram bot. Reply with ONLY the question text, no quotes, no markdown.",
+  });
+
+  return response.content[0].type === "text"
+    ? response.content[0].text
+    : `Did you mean to ${intent.intent}?`;
+}
+
+/**
+ * Sanitize message array for Anthropic API compliance.
+ * Merges consecutive same-role messages and ensures alternation.
+ */
+function sanitizeMessages(
+  messages: Array<{ role: "user" | "assistant"; content: string }>
+): Array<{ role: "user" | "assistant"; content: string }> {
+  if (messages.length === 0) return [];
+
+  const result: Array<{ role: "user" | "assistant"; content: string }> = [];
+  for (const msg of messages) {
+    if (result.length > 0 && result[result.length - 1].role === msg.role) {
+      // Merge with previous message of same role
+      result[result.length - 1] = {
+        role: msg.role,
+        content: result[result.length - 1].content + "\n" + msg.content,
+      };
+    } else {
+      result.push({ ...msg });
+    }
+  }
+  return result;
 }

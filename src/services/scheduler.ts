@@ -61,13 +61,21 @@ async function processReminders(bot: Bot<Context>): Promise<void> {
         ? users.filter((u) => u.id === reminder.target_user_id)
         : users; // null = send to both
 
-      // Send to group chat
       const targetNames = targets.map((t) => t.name).join(" & ");
       const message = `🔔 ${bold("Reminder")} for ${targetNames}:\n${reminder.message}`;
 
-      await bot.api.sendMessage(config.telegram.groupChatId, message, {
-        parse_mode: "HTML",
-      });
+      if (reminder.target_user_id && targets.length === 1) {
+        // Personal reminder → send to that user's DM
+        const target = targets[0];
+        await bot.api.sendMessage(target.telegram_user_id, message, {
+          parse_mode: "HTML",
+        });
+      } else {
+        // Shared reminder (both) → send to group
+        await bot.api.sendMessage(config.telegram.groupChatId, message, {
+          parse_mode: "HTML",
+        });
+      }
 
       // Handle recurring vs one-time
       if (reminder.cron_expression) {

@@ -14,8 +14,15 @@ import {
 } from "./services/receipt-parser.js";
 import type { BotContext } from "./middleware/user-context.js";
 
+let botInstance: Bot;
+
+export function getBotInstance(): Bot {
+  return botInstance;
+}
+
 export function createBot(): Bot {
   const bot = new Bot(config.telegram.botToken);
+  botInstance = bot;
 
   // ----- Middleware chain -----
 

@@ -1,14 +1,14 @@
 import type { Bot, Context } from "grammy";
 import { analyzeReceipt, type ReceiptData } from "./claude.js";
-import { createExpense } from "../db/client.js";
+import { createExpense, getUserByTelegramId } from "../db/client.js";
 import type { BotContext } from "../middleware/user-context.js";
 import { InlineKeyboard } from "grammy";
-import { formatKES, bold } from "../utils/telegram.js";
+import { formatKES, bold, notifyGroup } from "../utils/telegram.js";
 
 // Pending receipt confirmations (awaiting button tap)
 const pendingReceipts = new Map<
   string,
-  { data: ReceiptData; photoId: string; loggedBy: number | null }
+  { data: ReceiptData; photoId: string; loggedBy: number | null; isDM: boolean; senderName: string }
 >();
 
 // Pending detail requests (awaiting follow-up text describing what the expense was for)
@@ -54,6 +54,8 @@ export async function handlePhoto(ctx: BotContext): Promise<void> {
       data,
       photoId: photo.file_id,
       loggedBy: ctx.dbUser?.id ?? null,
+      isDM: ctx.isDM ?? false,
+      senderName: ctx.dbUser?.name ?? "Unknown",
     });
 
     // Build confirmation message
@@ -144,6 +146,16 @@ export function handlePendingDetail(ctx: BotContext): boolean {
     )
     .catch(console.error);
 
+  if (pending.isDM) {
+    import("../config.js").then(({ config }) => {
+      ctx.api.sendMessage(
+        config.telegram.groupChatId,
+        `[${pending.senderName} via DM] 💰 Expense #${expense.id}: ${formatKES(expense.amount)} — ${description} (${expense.category})`,
+        { parse_mode: "HTML", disable_notification: true }
+      ).catch(console.error);
+    });
+  }
+
   return true;
 }
 
@@ -176,12 +188,22 @@ export function registerReceiptCallbacks(bot: Bot<Context>): void {
         expense_date: pending.data.expense_date ?? undefined,
         logged_by: pending.loggedBy ?? undefined,
       });
-      pendingReceipts.delete(callbackId);
       await ctx.answerCallbackQuery({ text: "Expense saved!" });
       await ctx.editMessageText(
         `✅ Logged: ${formatKES(expense.amount)}${expense.vendor ? " at " + expense.vendor : ""} (${expense.category})${expense.description ? " — " + expense.description : ""} #${expense.id}`,
         { parse_mode: "HTML" }
       );
+
+      if (pending.isDM) {
+        const bot = ctx.api as unknown as Bot<Context>;
+        // Use the bot API directly via the context
+        await ctx.api.sendMessage(
+          (await import("../config.js")).config.telegram.groupChatId,
+          `[${pending.senderName} via DM] 💰 Expense #${expense.id}: ${formatKES(expense.amount)} — ${expense.description ?? expense.category} (${expense.category})`,
+          { parse_mode: "HTML", disable_notification: true }
+        );
+      }
+      pendingReceipts.delete(callbackId);
     } else if (action === "no") {
       pendingReceipts.delete(callbackId);
       await ctx.answerCallbackQuery({ text: "Dismissed." });

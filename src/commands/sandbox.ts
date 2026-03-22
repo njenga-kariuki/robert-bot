@@ -4,6 +4,7 @@ import type { BotContext } from "../middleware/user-context.js";
 import { goLive, goSandbox, getGlobalMode, wipeSandbox } from "../db/client.js";
 import { config } from "../config.js";
 import { bold } from "../utils/telegram.js";
+import { resetPracticeProgress } from "../services/practice-tracker.js";
 
 export const golive: Command = {
   name: "golive",
@@ -66,6 +67,7 @@ export const golive: Command = {
       }
 
       wipeSandbox();
+      resetPracticeProgress();
       await ctx.reply("🧹 Practice data wiped clean.");
     });
   },

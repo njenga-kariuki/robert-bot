@@ -9,9 +9,11 @@ import {
   getUserByName,
   type DbUser,
 } from "../db/client.js";
-import { bold } from "../utils/telegram.js";
+import { bold, notifyGroup } from "../utils/telegram.js";
 import { formatDate } from "../utils/dates.js";
 import { nowInTimezone } from "../utils/dates.js";
+import { getBotInstance } from "../bot.js";
+import { markPracticeStep } from "../services/practice-tracker.js";
 
 interface TaskParams {
   action: "add" | "list" | "done" | "cancel";
@@ -116,6 +118,11 @@ export const task: Command = {
       if (newTask.priority !== "normal") parts.push(`Priority: ${newTask.priority}`);
 
       await ctx.reply(parts.join("\n"), { parse_mode: "HTML" });
+      await markPracticeStep(ctx, "task", getBotInstance());
+
+      if (ctx.isDM) {
+        await notifyGroup(getBotInstance(), senderName, `📋 Task #${newTask.id}: ${newTask.title}${assignee ? ` (assigned to ${assignee.name})` : ""}`);
+      }
     });
 
     // Handle NL-routed task intents
@@ -153,6 +160,12 @@ export const task: Command = {
         if (newTask.due_date) parts.push(`Due: ${formatDate(newTask.due_date)}`);
 
         await ctx.reply(parts.join("\n"), { parse_mode: "HTML" });
+        await markPracticeStep(ctx, "task", getBotInstance());
+
+        if (ctx.isDM) {
+          const senderName = ctx.dbUser?.name ?? "Unknown";
+          await notifyGroup(getBotInstance(), senderName, `📋 Task #${newTask.id}: ${newTask.title}${assignee ? ` (assigned to ${assignee.name})` : ""}`);
+        }
       }
     });
   },
@@ -203,6 +216,11 @@ async function completeTask(ctx: BotContext, taskId: number): Promise<void> {
     return;
   }
   await ctx.reply(`✅ Task #${taskId} done: ${updated.title}`);
+
+  if (ctx.isDM) {
+    const senderName = ctx.dbUser?.name ?? "Unknown";
+    await notifyGroup(getBotInstance(), senderName, `✅ Task #${taskId} done: ${updated.title}`);
+  }
 }
 
 async function cancelTask(ctx: BotContext, taskId: number): Promise<void> {
@@ -212,4 +230,9 @@ async function cancelTask(ctx: BotContext, taskId: number): Promise<void> {
     return;
   }
   await ctx.reply(`❌ Task #${taskId} cancelled: ${updated.title}`);
+
+  if (ctx.isDM) {
+    const senderName = ctx.dbUser?.name ?? "Unknown";
+    await notifyGroup(getBotInstance(), senderName, `❌ Task #${taskId} cancelled: ${updated.title}`);
+  }
 }

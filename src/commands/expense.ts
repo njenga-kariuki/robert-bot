@@ -6,6 +6,7 @@ import { createExpense, deleteExpense } from "../db/client.js";
 import { bold, formatKES, notifyGroup } from "../utils/telegram.js";
 import { nowInTimezone } from "../utils/dates.js";
 import { getBotInstance } from "../bot.js";
+import { markPracticeStep } from "../services/practice-tracker.js";
 
 interface ExpenseParams {
   amount: number | null;
@@ -90,6 +91,7 @@ export const expense: Command = {
       if (exp.description) parts.push(`Description: ${exp.description}`);
 
       await ctx.reply(parts.join("\n"), { parse_mode: "HTML" });
+      await markPracticeStep(ctx, "expense", getBotInstance());
 
       if (ctx.isDM) {
         await notifyGroup(getBotInstance(), senderName, `💰 Expense #${exp.id}: ${formatKES(exp.amount)} — ${exp.description ?? exp.category} (${exp.category})`);
@@ -125,6 +127,7 @@ export const expense: Command = {
       if (exp.description) parts.push(`Description: ${exp.description}`);
 
       await ctx.reply(parts.join("\n"), { parse_mode: "HTML" });
+      await markPracticeStep(ctx, "expense", getBotInstance());
 
       if (ctx.isDM) {
         const senderName = ctx.dbUser?.name ?? "Unknown";
