@@ -29,7 +29,7 @@ echo "  2. Send: /newbot"
 echo "  3. Name it: Robert Bot"
 echo "  4. Username: something like robert_mgmt_bot"
 echo "  5. BotFather will give you a token like:"
-echo "     7123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw"
+echo "     <your-bot-token>"
 echo ""
 read -p "  Paste your bot token here: " BOT_TOKEN
 
@@ -47,7 +47,7 @@ echo "  1. Open Telegram and search for @userinfobot"
 echo "  2. Send it any message"
 echo "  3. It will reply with your User ID (a number)"
 echo ""
-read -p "  Jay's Telegram User ID: " JAY_USER_ID
+read -p "  Njenga's Telegram User ID: " JAY_USER_ID
 read -p "  Robert's Telegram User ID: " ROBERT_USER_ID
 
 echo ""

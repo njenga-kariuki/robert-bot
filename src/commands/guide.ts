@@ -152,13 +152,13 @@ What's the best place to buy office furniture in Nairobi?
 The bot will answer like a real assistant. Try any question you like!
 
 ${bold("Step 5 — Try the group chat")}
-Now open your group chat with Jay and type something like:
+Now open your group chat with Njenga and type something like:
 "we need more sugar and cooking oil"
 The bot might ask: "Add sugar and cooking oil to the shopping list?" — just say yes.
 While you're there, scroll up — you should see the task and expense from Steps 1–2 posted there automatically.
 
 ${bold("The bot tracks your progress")}
-As you complete each step, I'll confirm and tell you what's next. When all 5 are done, Jay gets notified automatically — no extra steps needed.
+As you complete each step, I'll confirm and tell you what's next. When all 5 are done, Njenga gets notified automatically — no extra steps needed.
 
 Want to check progress anytime? Type /ready`;
 

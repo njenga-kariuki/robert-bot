@@ -1,6 +1,6 @@
 # Robert Bot
 
-Telegram bot for coordinating tasks, expenses, and logistics with Robert (Business Associate in Nairobi).
+Telegram bot for coordinating tasks, expenses, and logistics with an associate in Nairobi.
 
 ## Stack
 - **Runtime:** Node.js + TypeScript (ESM)
@@ -46,4 +46,4 @@ npm run gcal-auth  # Google Calendar OAuth setup
 - Receipt parser prompts "What was this?" when items can't be extracted
 - NL confidence threshold: 0.7 in group (below = ignore). In DM, fallback to research assistant.
 - Bilingual: English + Sheng + Swahili-English mix
-- Dates: EAT (Africa/Nairobi) for Robert, PST for Jay
+- Dates: EAT (Africa/Nairobi) for Robert, PST for Njenga

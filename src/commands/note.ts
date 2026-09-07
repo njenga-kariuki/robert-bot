@@ -46,7 +46,7 @@ export const note: Command = {
       }
 
       if (!ctx.dbUser) {
-        await ctx.reply("I don't recognize your account. Contact Jay.");
+        await ctx.reply("I don't recognize your account. Contact Njenga.");
         return;
       }
 

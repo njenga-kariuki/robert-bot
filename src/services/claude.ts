@@ -39,7 +39,7 @@ export async function classifyIntent(
     model: config.anthropic.model,
     max_tokens: 500,
     messages: sanitized,
-    system: `You are a message classifier for a Telegram bot used to manage tasks, expenses, shopping, and reminders between Jay (principal) and Robert (associate) in Nairobi, Kenya.
+    system: `You are a message classifier for a Telegram bot used to manage tasks, expenses, shopping, and reminders between Njenga (principal) and Robert (associate) in Nairobi, Kenya.
 
 The sender of this message is: ${senderName}
 
@@ -101,7 +101,7 @@ export async function extractParams<T>(
 
 Sender: ${senderName}
 Current date/time (Africa/Nairobi): ${currentDate}
-The two users are Jay (principal, based in Seattle) and Robert (associate, based in Nairobi).
+The two users are Njenga (principal, based in Seattle) and Robert (associate, based in Nairobi).
 
 When parsing dates:
 - "tomorrow" = the day after ${currentDate}
@@ -113,7 +113,7 @@ When parsing dates:
 
 When parsing people:
 - "Robert" / "Rob" / "him" = Robert
-- "Jay" / "me" / "I" (if sender is Jay) = Jay
+- "Njenga" / "me" / "I" (if sender is Njenga) = Njenga
 - "both" / "us" / "everyone" = both
 - If no assignee mentioned and command is a task, default to Robert
 
@@ -258,7 +258,7 @@ export async function dmResearchQuery(
     messages: sanitized,
     system: `You are a helpful research assistant in a Telegram DM with ${senderName}.
 
-${senderName} works with Jay on business operations and logistics, primarily in Nairobi, Kenya. They may ask about:
+${senderName} works with Njenga on business operations and logistics, primarily in Nairobi, Kenya. They may ask about:
 - Prices, vendors, and where to find things in Nairobi
 - How to do something (practical tasks, logistics, errands)
 - Comparisons (which option is better, pros/cons)

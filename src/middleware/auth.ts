@@ -9,7 +9,7 @@ const allowedChatIds = new Set([
 
 /**
  * Silently drops messages from unknown chats/users.
- * Allows: the shared group + direct messages from Jay or Robert.
+ * Allows: the shared group + direct messages from Njenga or Robert.
  */
 export async function authMiddleware(
   ctx: Context,

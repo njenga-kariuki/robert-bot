@@ -14,7 +14,7 @@ import CronExpressionParser from "cron-parser";
 
 interface StandingParams {
   action: "add" | "list" | "cancel";
-  target: "Jay" | "Robert" | "both" | null;
+  target: "Njenga" | "Robert" | "both" | null;
   message: string | null;
   cron_expression: string | null;
   schedule_description: string | null;
@@ -57,7 +57,7 @@ export const standing: Command = {
         text,
         `{
           "action": "add|list|cancel",
-          "target": "Jay|Robert|both|null (who to remind)",
+          "target": "Njenga|Robert|both|null (who to remind)",
           "message": "the recurring reminder message",
           "cron_expression": "cron expression (e.g. '0 15 * * 5' for every Friday 3pm, '0 9 * * *' for daily 9am). Use Africa/Nairobi timezone.",
           "schedule_description": "human-readable schedule like 'every Friday 3pm' or 'daily 9am'",

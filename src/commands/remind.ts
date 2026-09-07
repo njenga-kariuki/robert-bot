@@ -9,7 +9,7 @@ import { formatDate } from "../utils/dates.js";
 import { nowInTimezone } from "../utils/dates.js";
 
 interface RemindParams {
-  target: "Jay" | "Robert" | "both" | null;
+  target: "Njenga" | "Robert" | "both" | null;
   message: string | null;
   datetime: string | null; // ISO datetime
 }
@@ -54,7 +54,7 @@ export const remind: Command = {
         "remind",
         text,
         `{
-          "target": "Jay|Robert|both|null (who to remind, null=both)",
+          "target": "Njenga|Robert|both|null (who to remind, null=both)",
           "message": "the reminder message",
           "datetime": "ISO datetime YYYY-MM-DDTHH:mm:ss (in Africa/Nairobi timezone)"
         }`,

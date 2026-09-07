@@ -70,7 +70,7 @@ export const task: Command = {
         text,
         `{
           "action": "add|list|done|cancel",
-          "assignee": "Jay|Robert|both|null",
+          "assignee": "Njenga|Robert|both|null",
           "title": "short task title",
           "description": "optional longer description or null",
           "due_date": "YYYY-MM-DD or null",

@@ -72,7 +72,7 @@ export function wipeSandbox(): void {
   // Seed sandbox users
   sandboxDb.run(
     "INSERT INTO users (telegram_user_id, name, role) VALUES (?, ?, ?)",
-    [config.telegram.jayUserId, "Jay", "principal"]
+    [config.telegram.jayUserId, "Njenga", "principal"]
   );
   sandboxDb.run(
     "INSERT INTO users (telegram_user_id, name, role) VALUES (?, ?, ?)",
@@ -167,13 +167,13 @@ export function migrate(): void {
   if (!count || count.c === 0) {
     runSql(
       "INSERT INTO users (telegram_user_id, name, role) VALUES (?, ?, ?)",
-      [config.telegram.jayUserId, "Jay", "principal"]
+      [config.telegram.jayUserId, "Njenga", "principal"]
     );
     runSql(
       "INSERT INTO users (telegram_user_id, name, role) VALUES (?, ?, ?)",
       [config.telegram.robertUserId, "Robert", "associate"]
     );
-    console.log("Seeded users: Jay (principal), Robert (associate)");
+    console.log("Seeded users: Njenga (principal), Robert (associate)");
   }
 
   // Seed sandbox users if empty
@@ -182,7 +182,7 @@ export function migrate(): void {
   if (!sbCount || sbCount.c === 0) {
     runSql(
       "INSERT INTO users (telegram_user_id, name, role) VALUES (?, ?, ?)",
-      [config.telegram.jayUserId, "Jay", "principal"]
+      [config.telegram.jayUserId, "Njenga", "principal"]
     );
     runSql(
       "INSERT INTO users (telegram_user_id, name, role) VALUES (?, ?, ?)",

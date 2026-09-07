@@ -55,7 +55,7 @@ ${bold("Other")}
 
       const msg = ctx.isDM
         ? `Hey ${name}! 👋 This is your personal space.\n\nYou can:\n• Ask me anything — research, prices, how-to\n• Ask about your tasks, expenses, or shopping list\n• Save notes with /note\n• Use all the same commands as the group\n\nI remember our conversation, so you can follow up naturally. Just type what you need.`
-        : `Hey ${name}! 👋 I help you and ${ctx.dbUser?.role === "principal" ? "Robert" : "Jay"} stay on top of tasks, expenses, shopping, and reminders.\n\nType /guide for a walkthrough, or /help for the command list.`;
+        : `Hey ${name}! 👋 I help you and ${ctx.dbUser?.role === "principal" ? "Robert" : "Njenga"} stay on top of tasks, expenses, shopping, and reminders.\n\nType /guide for a walkthrough, or /help for the command list.`;
 
       await ctx.reply(msg, { parse_mode: "HTML" });
     });

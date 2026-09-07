@@ -8,14 +8,14 @@ import { resetPracticeProgress } from "../services/practice-tracker.js";
 
 export const golive: Command = {
   name: "golive",
-  description: "Switch from practice mode to live tracking (Jay only)",
+  description: "Switch from practice mode to live tracking (Njenga only)",
   register(bot: Bot<Context>) {
     bot.command("golive", async (ctx_) => {
       const ctx = ctx_ as BotContext;
 
-      // Jay only
+      // Njenga only
       if (ctx.from?.id !== config.telegram.jayUserId) {
-        await ctx.reply("Only Jay can switch modes.");
+        await ctx.reply("Only Njenga can switch modes.");
         return;
       }
 
@@ -38,9 +38,9 @@ export const golive: Command = {
     bot.command("practice", async (ctx_) => {
       const ctx = ctx_ as BotContext;
 
-      // Jay only
+      // Njenga only
       if (ctx.from?.id !== config.telegram.jayUserId) {
-        await ctx.reply("Only Jay can switch modes.");
+        await ctx.reply("Only Njenga can switch modes.");
         return;
       }
 
@@ -62,7 +62,7 @@ export const golive: Command = {
       const ctx = ctx_ as BotContext;
 
       if (ctx.from?.id !== config.telegram.jayUserId) {
-        await ctx.reply("Only Jay can wipe practice data.");
+        await ctx.reply("Only Njenga can wipe practice data.");
         return;
       }
 

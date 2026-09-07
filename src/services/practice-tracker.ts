@@ -84,10 +84,10 @@ export async function markPracticeStep(
   } else {
     // All done!
     await ctx.reply(
-      `🎉 All ${total} practice steps complete! You've got the hang of it.\n\nJay has been notified — he'll switch to live mode when ready.`
+      `🎉 All ${total} practice steps complete! You've got the hang of it.\n\nNjenga has been notified — he'll switch to live mode when ready.`
     );
 
-    // Notify Jay via DM (only when the associate completes, not Jay himself)
+    // Notify Njenga via DM (only when the associate completes, not Njenga himself)
     if (userId !== config.telegram.jayUserId) {
       const name = ctx.dbUser?.name ?? ctx.from?.first_name ?? "Someone";
       try {
@@ -96,7 +96,7 @@ export async function markPracticeStep(
           `📣 ${name} has completed all ${total} practice steps and is ready to go live!\n\nUse /golive when you're ready.`
         );
       } catch (err) {
-        console.error("Failed to notify Jay about practice completion:", err);
+        console.error("Failed to notify Njenga about practice completion:", err);
       }
     }
   }

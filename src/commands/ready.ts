@@ -30,7 +30,7 @@ export const ready: Command = {
       }
 
       await ctx.reply(
-        `${bold(`${name} is ready to go live!`)} 🚀\n\nJay — when you're good too, send /golive and everything starts counting for real.`,
+        `${bold(`${name} is ready to go live!`)} 🚀\n\nNjenga — when you're good too, send /golive and everything starts counting for real.`,
         { parse_mode: "HTML" }
       );
 
